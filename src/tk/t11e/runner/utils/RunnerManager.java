@@ -60,7 +60,6 @@ public class RunnerManager {
                         logger.log(Level.SEVERE, "Error while reading Manifest!", throwable);
                         return;
                     }
-                    System.out.println(manifest);
                     String main = manifest.get("Runner-Main");
                     if (main == null)
                         logger.severe("Could not find Runner-Main in manifest!");
@@ -72,15 +71,34 @@ public class RunnerManager {
                                     Object instance = mainClass.newInstance();
 
                                     try {
-                                        mainClass.getMethod("onLoad").invoke(instance);
-                                        mainClass.getMethod("onEnable").invoke(instance);
+                                        new Thread(() -> {
+                                            try {
+                                                mainClass.getMethod("onLoad").invoke(instance);
+                                            } catch (Throwable throwable) {
+                                                throw new Error(throwable);
+                                            }
+                                        }, name + " Loader").start();
 
-                                        Method hackThreadStart = RunnerPlugin.class.getDeclaredMethod("startThreadHacker");
-                                        hackThreadStart.setAccessible(true);
-                                        hackThreadStart.invoke(instance);
+                                        new Thread(() -> {
+                                            try {
+                                                mainClass.getMethod("onEnable").invoke(instance);
+                                            } catch (Throwable throwable) {
+                                                throw new Error(throwable);
+                                            }
+                                        }, name + " Enabler").start();
 
                                         logger.info("Started ¸\"" + name + "\"!");
                                         instances.put(name, instance);
+
+                                        new Thread(() -> {
+                                            try {
+                                                Method hackThreadStart = RunnerPlugin.class.getDeclaredMethod("startThreadHacker");
+                                                hackThreadStart.setAccessible(true);
+                                                hackThreadStart.invoke(instance);
+                                            } catch (Throwable throwable) {
+                                                throw new Error(throwable);
+                                            }
+                                        }, name + " Thread Hacker").start();
                                         return;
                                     } catch (Throwable throwable) {
                                         logger.log(Level.SEVERE, "Error while enabling " + name + "!", throwable);

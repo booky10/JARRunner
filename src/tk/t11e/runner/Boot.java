@@ -9,7 +9,6 @@ import tk.t11e.runner.utils.RunnerManager;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -53,17 +52,13 @@ public class Boot {
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 logger.info("Stopping!");
                 running = false;
+                for (String name : RunnerManager.threads.keySet())
+                    RunnerManager.stopJAR(name);
 
-                for (String name : RunnerManager.threads.keySet()) {
-                    AtomicBoolean resume = new AtomicBoolean(false);
-                    RunnerManager.stopJAR(name).getValue(voided -> resume.set(true));
-
-                    while (!resume.get()) {
-                        try {
-                            Thread.sleep(1);
-                        } catch (InterruptedException ignored) {
-                        }
-                    }
+                logger.info("Waiting for programs to finish...");
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException ignored) {
                 }
             }, "Shutdown Thread"));
 
