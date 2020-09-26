@@ -37,30 +37,58 @@ public class RunnerManager {
 
                 URLClassLoader classLoader = new URLClassLoader(new URL[]{file.toURI().toURL()});
                 URL manifestURL = classLoader.getResource("RunnerPlugin.MF");
+                URL realManifestURL = classLoader.getResource("META-INF/MANIFEST.MF");
 
-                if (manifestURL != null) {
-                    URLConnection connection = manifestURL.openConnection();
-                    connection.connect();
+                if (manifestURL != null || realManifestURL != null) {
+                    String main;
+                    if (manifestURL != null) {
+                        URLConnection connection = manifestURL.openConnection();
+                        connection.connect();
 
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                    HashMap<String, String> manifest = new HashMap<>();
-                    try {
-                        String line;
-                        while ((line = reader.readLine()) != null) {
-                            String[] split = line.split(": ");
-                            String key = split[0];
-                            StringBuilder value = new StringBuilder();
-                            for (int i = 1; i < split.length; i++) {
-                                value.append(split[i]);
-                                if (i != split.length - 1) value.append(": ");
+                        BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                        HashMap<String, String> manifest = new HashMap<>();
+                        try {
+                            String line;
+                            while ((line = reader.readLine()) != null) {
+                                String[] split = line.split(": ");
+                                String key = split[0];
+                                StringBuilder value = new StringBuilder();
+                                for (int i = 1; i < split.length; i++) {
+                                    value.append(split[i]);
+                                    if (i != split.length - 1) value.append(": ");
+                                }
+                                manifest.put(key, value.toString());
                             }
-                            manifest.put(key, value.toString());
+                        } catch (Throwable throwable) {
+                            logger.log(Level.SEVERE, "Error while reading Manifest!", throwable);
+                            return;
                         }
-                    } catch (Throwable throwable) {
-                        logger.log(Level.SEVERE, "Error while reading Manifest!", throwable);
-                        return;
+                        String main = manifest.get("Runner-Main");
+                    } else {
+                        URLConnection connection = manifestURL.openConnection();
+                        connection.connect();
+
+                        BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                        HashMap<String, String> manifest = new HashMap<>();
+                        try {
+                            String line;
+                            while ((line = reader.readLine()) != null) {
+                                String[] split = line.split(": ");
+                                String key = split[0];
+                                StringBuilder value = new StringBuilder();
+                                for (int i = 1; i < split.length; i++) {
+                                    value.append(split[i]);
+                                    if (i != split.length - 1) value.append(": ");
+                                }
+                                manifest.put(key, value.toString());
+                            }
+                        } catch (Throwable throwable) {
+                            logger.log(Level.SEVERE, "Error while reading Manifest!", throwable);
+                            return;
+                        }
+                        String main = manifest.get("Main-Class");
                     }
-                    String main = manifest.get("Runner-Main");
+
                     if (main == null)
                         logger.severe("Could not find Runner-Main in manifest!");
                     else {
