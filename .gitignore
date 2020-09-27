@@ -1,7 +1,10 @@
 out/
 .idea/
 plugins/
+config/
+data/
 
 *.class
 *.jar
 *.iml
+*.zip

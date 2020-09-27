@@ -6,7 +6,9 @@ import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
 import tk.t11e.runner.logger.RunnerLogger;
 import tk.t11e.runner.utils.RunnerManager;
+import tk.t11e.runner.utils.ThreadUtils;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -20,7 +22,12 @@ public class Boot {
 
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
+
         new Thread(() -> {
+            new File("config").mkdirs();
+            new File("data").mkdirs();
+            new File("plugins").mkdirs();
+
             OptionParser parser = new OptionParser();
             parser.allowsUnrecognizedOptions();
 
@@ -49,18 +56,22 @@ public class Boot {
                 RunnerManager.startJAR(options.valueOf(autoStart));
             }
 
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                logger.info("Stopping!");
+            Thread shutdownThread = new Thread(() -> {
+                List<String> runningThreads = new ArrayList<>(RunnerManager.threads.keySet());
                 running = false;
-                for (String name : RunnerManager.threads.keySet())
-                    RunnerManager.stopJAR(name);
 
-                logger.info("Waiting for programs to finish...");
-                try {
-                    Thread.sleep(5000);
-                } catch (InterruptedException ignored) {
-                }
-            }, "Shutdown Thread"));
+                if (runningThreads.size() > 0)
+                    new Thread(() -> {
+                        System.out.println("Waiting for programs to finish...");
+
+                        for (String name : new ArrayList<>(RunnerManager.threads.keySet()))
+                            RunnerManager.stopJAR(name).getValue(voided -> runningThreads.remove(name));
+                    }, "End Thread").start();
+
+                while (runningThreads.size() != 0) ThreadUtils.sleep(100);
+                System.out.println("Shutting down...");
+            }, "Shutdown Thread");
+            Runtime.getRuntime().addShutdownHook(shutdownThread);
 
             inputThread = new Thread(() -> {
                 logger.info("Ready for Input!");
@@ -80,8 +91,10 @@ public class Boot {
                             case "restart":
                                 if (commandArgs.length >= 2)
                                     if (RunnerManager.threads.containsKey(commandArgs[1]))
-                                        RunnerManager.stopJAR(commandArgs[1]).getValue(voided ->
-                                                RunnerManager.startJAR(commandArgs[1]));
+                                        RunnerManager.stopJAR(commandArgs[1]).getValue(voided -> {
+                                            ThreadUtils.sleep(150);
+                                            RunnerManager.startJAR(commandArgs[1]);
+                                        });
                                     else
                                         logger.warning("That doesn't run right now!");
                                 else
@@ -132,6 +145,9 @@ public class Boot {
                                 logger.info("|   - list (List running JARs) |");
                                 logger.info("+------------------------------+");
                                 break;
+                            case "booky10isgood":
+                                shutdownThread.start();
+                                break;
                             default:
                                 logger.warning("Please use \"help\" to get help!");
                                 break;
@@ -143,12 +159,8 @@ public class Boot {
             }, "Input Thread");
             inputThread.start();
 
-            try {
-                Thread.sleep(15);
-            } catch (InterruptedException ignored) {
-            } finally {
-                logger.info("Finished Initialising (" + (System.currentTimeMillis() - start - 15) + "ms)");
-            }
+            ThreadUtils.sleep(15);
+            logger.info("Finished Initialising (" + (System.currentTimeMillis() - start - 15) + "ms)");
         }, "Startup Thread").start();
     }
 }

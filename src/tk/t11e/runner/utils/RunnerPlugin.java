@@ -7,6 +7,12 @@ import java.util.logging.Logger;
 
 public abstract class RunnerPlugin {
 
+    private final String name;
+
+    protected RunnerPlugin(String name) {
+        this.name = name;
+    }
+
     public void onEnable() {
     }
 
@@ -17,21 +23,17 @@ public abstract class RunnerPlugin {
     }
 
     private final Thread threadHacker = new Thread(() -> {
-        while (true)
-            try {
-                Thread.sleep(2147483647L);
-            } catch (InterruptedException ignored) {
-            }
+        while (true) ThreadUtils.sleep(2147483647);
     }, "Thread Hacker [" + getClass().getSimpleName() + "]");
 
-    private void startThreadHacker() {
+    final void startThreadHacker() {
         try {
             threadHacker.start();
         } catch (Throwable ignored) {
         }
     }
 
-    private void stopThreadHacker() {
+    final void stopThreadHacker() {
         try {
             if (threadHacker.isAlive())
                 threadHacker.stop();
@@ -41,5 +43,13 @@ public abstract class RunnerPlugin {
 
     protected final Logger getLogger() {
         return RunnerLogger.getLogger();
+    }
+
+    protected final String getName() {
+        return name;
+    }
+
+    public final void disable() {
+        RunnerManager.stopJAR(name);
     }
 }
