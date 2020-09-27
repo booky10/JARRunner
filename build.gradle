@@ -1,0 +1,31 @@
+plugins {
+    id 'java'
+    id 'application'
+
+    id 'com.github.johnrengelman.shadow' version '6.0.0'
+}
+
+version = 'v1.1'
+
+repositories {
+    jcenter()
+    mavenCentral()
+}
+
+dependencies {
+    shadow 'com.google.guava:guava:29.0-jre'
+
+    implementation 'net.sf.jopt-simple:jopt-simple:6.0-alpha-3'
+}
+
+application {
+    mainClassName = 'tk.t11e.runner.Boot'
+}
+
+runShadow {
+    standardInput = System.in
+}
+
+jar {
+    manifest { attributes('Main-Class': mainClassName) }
+}

@@ -5,6 +5,7 @@ import tk.t11e.runner.logger.RunnerLogger;
 
 import java.util.logging.Logger;
 
+@SuppressWarnings("all")
 public abstract class RunnerPlugin {
 
     private final String name;

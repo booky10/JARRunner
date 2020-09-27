@@ -1,10 +1,11 @@
-out/
+build/
+
+.gradle/
 .idea/
-plugins/
-config/
-data/
 
 *.class
 *.jar
 *.iml
 *.zip
+
+!gradle/wrapper/**

@@ -1,6 +1,7 @@
 package tk.t11e.runner;
 // Created by booky10 in JARRunner (09:16 06.09.20)
 
+import com.sun.org.apache.xerces.internal.impl.XMLEntityManager;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
@@ -9,6 +10,8 @@ import tk.t11e.runner.utils.RunnerManager;
 import tk.t11e.runner.utils.ThreadUtils;
 
 import java.io.File;
+import java.lang.reflect.Field;
+import java.nio.file.FileSystems;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -22,6 +25,15 @@ public class Boot {
 
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
+        Thread.currentThread().setName("Startup Loader Thread");
+
+        // Detecting Developer Environment (W.I.P.)
+        if (new File(".idea").exists()) {
+            logger.info("Detected developer environment! Changing \"user.dir\" to \"run\"...");
+
+            System.setProperty("user.dir", System.getProperty("user.dir") + File.separator + "run");
+            new File(System.getProperty("user.dir")).mkdirs();
+        }
 
         new Thread(() -> {
             new File("config").mkdirs();
@@ -38,8 +50,6 @@ public class Boot {
             OptionSet options = parser.parse(args);
             List<String> list = new ArrayList<>(options.valuesOf(optionNonOptions));
             if (!list.isEmpty()) System.out.println("Completely ignored arguments: " + list);
-
-            RunnerLogger.getLogger();
 
             if (options.has("help")) {
                 logger.info("+------------------------------+");
@@ -79,11 +89,14 @@ public class Boot {
                     try {
                         StringBuilder command = new StringBuilder();
                         char character;
-                        while ((character = (char) System.in.read()) != '\n')
-                            command.append(character);
+                        while ((character = (char) System.in.read()) != '\n') {
+                            if (character == '\uFFFF') continue;
+                            command.append(character == '\t' ? "    " : character);
+                        }
                         String[] commandArgs = command.toString().toLowerCase().split(" ");
+                        if (commandArgs.length < 1) logger.warning("Please use \"help\" to get help!");
 
-                        switch (commandArgs[0]) {
+                        else switch (commandArgs[0]) {
                             case "end":
                             case "quit":
                                 System.exit(0);
