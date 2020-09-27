@@ -1,5 +1,5 @@
 # JARRunner
 
-[![](https://jitci.com/gh/booky10/JARRunner/svg)](https://jitci.com/gh/booky10/JARRunner)
+[![](https://jitpack.io/v/tk.booky/JARRunner.svg)](https://jitpack.io/#tk.booky/JARRunner)
 
 Run JARs.
