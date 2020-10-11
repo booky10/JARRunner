@@ -21,3 +21,9 @@ jobs:
       run: chmod +x gradlew
     - name: Build with Gradle
       run: ./gradlew shadowJar
+    - name: 'Upload Artifact'
+      uses: actions/upload-artifact@v2
+      with:
+        name: "*"
+        path: 'build/libs/'
+        retention-days: 14
